@@ -1,0 +1,12 @@
+# http://vocab.getty.edu/sparql
+
+construct { 
+  ?c rdfs:label ?lab 
+}
+where { 
+  select distinct * {
+    ?c gvp:prefLabelGVP [xl:literalForm ?lab];
+    gvp:agentType|(gvp:agentType/gvp:broaderGenericExtended)
+      [rdfs:label "film directors"@en]
+  }
+}
