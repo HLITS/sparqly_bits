@@ -1,0 +1,9 @@
+construct { 
+  ?concept rdfs:label ?label 
+}
+where {
+  select distinct * {
+    ?concept rdfs:label ?label;
+    dbpedia-owl:occupation dbpedia:Film_director 
+  }
+}
