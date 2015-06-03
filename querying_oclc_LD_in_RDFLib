@@ -1,0 +1,40 @@
+To get value of rdflib.query.ResultRow object:
+
+	for row in q:
+		print row[0].value
+
+		
+To get author name:
+
+	q = g.query("""
+	SELECT ?n
+	WHERE {
+		?s schema:creator ?o.
+		?o schema:name ?n
+	}""")
+
+To get thesis title:
+
+	q2 = g.query("""
+	SELECT ?title
+	WHERE {
+		?oclcuri wdrs:describedby ?titleuri.
+		?titleuri schema:about ?uri.
+		?uri schema:name ?title. 
+	}""")
+	
+	
+To get title and author together
+	
+	q3 = g.query("""
+	SELECT DISTINCT ?n ?title
+	WHERE {
+		?oclcuri schema:creator ?o.
+		?o schema:name ?n.
+		?oclcuri wdrs:describedby ?titleuri.
+		?titleuri schema:about ?uri.
+		?uri schema:name ?title.
+	}""")
+	
+	for row in q3:
+    print row[0] + ", " + row[1]
