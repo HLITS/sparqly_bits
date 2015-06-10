@@ -1,0 +1,72 @@
+import rdflib.plugins.sparql as sparql
+import rdflib
+import codecs
+import csv
+
+# load graph from merged oclc/hollis-derived data
+
+g2 = rdflib.Graph()
+result = g2.parse('theses_merged.rdf') 
+
+# get worldcat URI, date, keywords from local headings
+
+toz_subjects = g2.query(
+    """SELECT DISTINCT ?date ?toz ?worldcatwork
+       WHERE {
+          ?holliswork owl:sameAs ?worldcatwork .
+          ?worldcatwork schema:datePublished ?date .
+          ?holliswork schema:keywords ?toz .
+       }
+       ORDER BY ASC(?date)""")
+len(toz_subjects)
+
+csv_data = [["datePublished", "schema:keywords", "URI"]]
+
+
+for row in toz_subjects:
+    csv_data_row = []
+    for item in row:
+        csv_data_row += [item.encode('utf-8')]
+    csv_data += [csv_data_row]
+
+csv_file = 'thesis_subjects_tozzer.csv'
+
+with open(csv_file, 'wb') as output:
+    output.write(codecs.BOM_UTF8)
+    writer = csv.writer(output, quoting=csv.QUOTE_ALL,quotechar='"')
+    writer.writerows(csv_data)
+        
+print csv_file, 'has been created'
+
+# get worldcat URI, date, subject string, subject URI
+
+worldcat_subjects = g2.query(
+    """SELECT DISTINCT ?date ?subject_string ?subject ?worldcatwork
+       WHERE {
+          ?holliswork owl:sameAs ?worldcatwork .
+          ?worldcatwork schema:datePublished ?date .
+          ?worldcatwork schema:about ?subject . 
+          ?subject schema:name ?subject_string .
+          }
+       ORDER BY ASC(?date)""")
+len(worldcat_subjects)
+
+csv_data = [["datePublished", "schema:name", "schema:about", "URI"]]
+
+for row in worldcat_subjects:
+    csv_data_row = []
+    for item in row:
+        csv_data_row += [item.encode('utf-8')]
+    csv_data += [csv_data_row]
+
+import codecs
+import csv
+
+csv_file = 'thesis_subjects_v3.csv'
+
+with open(csv_file, 'wb') as output:
+    output.write(codecs.BOM_UTF8)
+    writer = csv.writer(output, quoting=csv.QUOTE_ALL,quotechar='"')
+    writer.writerows(csv_data)
+        
+print csv_file, 'has been created'
