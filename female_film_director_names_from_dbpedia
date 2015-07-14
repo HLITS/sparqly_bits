@@ -1,0 +1,68 @@
+import rdflib.plugins.sparql as sparql
+import rdflib
+from rdflib.namespace import RDF, FOAF
+from rdflib import URIRef
+from rdflib import Literal
+import time
+
+def infer_name(name_uri):
+    inferred_name = name_uri.replace("http://dbpedia.org/resource/", "").replace("_"," ")
+    if '(' in inferred_name:
+    #print inferred_name[:inferred_name.index('(')]
+        inferred_name = inferred_name[:inferred_name.index('(')]
+    return inferred_name.strip()
+
+#load dbpedia female film director graph
+
+g_director_list = rdflib.Graph()
+result = g_director_list.parse("http://dbpedia.org/data2/yago/FemaleFilmDirectors.rdf")
+
+print("graph has %s statements." % len(g_director_list))
+# prints graph has 79 statements.
+
+for subj, pred, obj in g_director_list:
+   if (subj, pred, obj) not in g_director_list:
+       raise Exception("It better be!")
+
+s = g_director_list.serialize(format='n3')
+
+#get subjects that are URIs for female film directors
+qres_director_list = g_director_list.query(
+    """SELECT ?s
+       WHERE { ?s rdf:type <http://dbpedia.org/class/yago/FemaleFilmDirectors>
+       }""")
+len(qres_director_list)
+
+g_director_names = rdflib.Graph()
+
+for row in qres_director_list:
+#    print("%s \n" % row)
+    director_uri = ("%s" % row)
+#    print director_uri
+    g_director = rdflib.Graph()
+    result = g_director.parse(director_uri)
+#    print("graph has %s statements." % len(g_director))
+    time.sleep(1)
+    #get director name variants
+    if ( URIRef(director_uri), RDF.type, FOAF.Person ) in g_director:       
+        qres_director = g_director.query(
+            """CONSTRUCT { ?s rdfs:label ?o . }
+            WHERE { SELECT ?s ?p ?o {
+                ?s foaf:name|dbpprop:name|rdfs:label ?o .
+            } 
+            }""")
+
+        for row in qres_director:
+#            print("%s %s %s\n" % row)
+            g_director_names.add( row )
+    else: 
+        print director_uri
+        print "Not defined as person; inferring name from URI: " + infer_name(director_uri)
+#        g_director_names.add( (director_uri, FOAF.name, Literal(infer_name(director_uri)) ))
+
+print("graph has %s statements." % len(g_director_names))
+
+#write graph to file
+rdf_file = open('director_names.rdf', 'wb')
+rdf_file.write(g_director_names.serialize(format='xml'))
+rdf_file.close()
